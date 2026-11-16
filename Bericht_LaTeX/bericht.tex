@@ -929,21 +929,22 @@ vergleichbar.
 \section{MATLAB-Quellcode}\label{sec:anhang}
 % ==================================================================
 Die komplette Auswertung wird mit \texttt{run\_alle.m} gestartet und erzeugt
-alle Abbildungen und Tabellen dieses Berichts. Fensterfunktionen und
-Kurzzeit-FFT sind nachgebildet, sodass keine Signal Processing Toolbox
-erforderlich ist; die Ergebnisse sind identisch zu \texttt{hann},
-\texttt{flattopwin} und \texttt{spectrogram}.
+alle Abbildungen und Tabellen dieses Berichts. Verwendet werden die
+Funktionen der Signal Processing Toolbox (\texttt{hann}, \texttt{flattopwin},
+\texttt{enbw}, \texttt{spectrogram}, \texttt{tfestimate}, \texttt{mscohere},
+\texttt{resample}, \texttt{findpeaks}). Die Zuordnung der Messdateien und die
+automatische Prüfung auf ungültige Messungen erfolgt in
+\texttt{lib/messkatalog.m}.
 
 \subsection*{Hauptskript und Hilfsfunktionen}
 \lstinputlisting[title={run\_alle.m}]{../Auswertung_MATLAB/run_alle.m}
-\lstinputlisting[title={lib/spektrum.m}]{../Auswertung_MATLAB/lib/spektrum.m}
-\lstinputlisting[title={lib/stft.m}]{../Auswertung_MATLAB/lib/stft.m}
-\lstinputlisting[title={lib/fenster.m}]{../Auswertung_MATLAB/lib/fenster.m}
-\lstinputlisting[title={lib/uebertragung.m}]{../Auswertung_MATLAB/lib/uebertragung.m}
+\lstinputlisting[title={lib/messkatalog.m}]{../Auswertung_MATLAB/lib/messkatalog.m}
 \lstinputlisting[title={lib/lade\_messung.m}]{../Auswertung_MATLAB/lib/lade_messung.m}
-\lstinputlisting[title={lib/tiefpass\_fir.m}]{../Auswertung_MATLAB/lib/tiefpass_fir.m}
+\lstinputlisting[title={lib/spektrum.m}]{../Auswertung_MATLAB/lib/spektrum.m}
+\lstinputlisting[title={lib/fenster.m}]{../Auswertung_MATLAB/lib/fenster.m}
 
 \subsection*{Auswerteskripte}
+\lstinputlisting[title={A0\_Zeitsignale.m}]{../Auswertung_MATLAB/A0_Zeitsignale.m}
 \lstinputlisting[title={A1\_Abtastrate.m}]{../Auswertung_MATLAB/A1_Abtastrate.m}
 \lstinputlisting[title={A2\_Fensterfunktion.m}]{../Auswertung_MATLAB/A2_Fensterfunktion.m}
 \lstinputlisting[title={A3\_Frequenzaufloesung.m}]{../Auswertung_MATLAB/A3_Frequenzaufloesung.m}
