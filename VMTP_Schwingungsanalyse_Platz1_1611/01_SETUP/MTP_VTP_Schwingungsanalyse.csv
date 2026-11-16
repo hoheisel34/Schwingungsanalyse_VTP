@@ -1,0 +1,4 @@
+Geraet;Chan;Type;Name;SensorName;Seriennummer;Unit;Kalibrierwert;X_Koord;Y_Koord;Z_Koord
+cDAQ1Mod1;ai0;Voltage;Krafteinleitung;PCB 802C02;LW61271;N;10.47;0;0;0
+cDAQ1Mod1;ai1;Voltage;Einleitung;MMF KS97.10;18006;m/s^2;1.0674;0;0;0
+cDAQ1Mod1;ai2;Voltage;Balken mitte;MMF KS97.10;18005;m/s^2;1.448;0;0;0

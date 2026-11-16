@@ -1,0 +1,953 @@
+\documentclass[a4paper,11pt,parskip=half,toc=listof,bibliography=totoc]{scrartcl}
+
+% ------------------------------------------------------------------
+% Pakete
+% ------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,left=25mm,right=25mm,top=25mm,bottom=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[locale=DE,per-mode=symbol,exponent-product=\cdot]{siunitx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{abbildungen/}}
+
+% automatisch erzeugte Kennwerte aus MATLAB
+\input{tabellen/wert_abtastrate}
+\input{tabellen/wert_kraft}
+
+\lstset{
+  language=Matlab,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{red!60!black},
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true, frame=single, rulecolor=\color{gray!50},
+  showstringspaces=false, tabsize=4,
+  literate={ä}{{\"a}}1 {ö}{{\"o}}1 {ü}{{\"u}}1 {ß}{{\ss}}1
+}
+
+\newcommand{\Sx}{S_{x}}
+\newcommand{\Sxx}{S_{xx}}
+\newcommand{\Gxx}{G_{xx}}
+\makeatletter
+\newcommand{\tabinput}[1]{\@@input tabellen/#1.tex }
+\makeatother
+\newcommand{\abb}[1]{Abb.~\ref{#1}}
+\newcommand{\tab}[1]{Tab.~\ref{#1}}
+
+% ------------------------------------------------------------------
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  {\large Hochschule München -- Fakultät 03\\
+  Labor für Schwingungstechnik und Maschinendynamik\par}
+  \vspace{3cm}
+  {\Huge\bfseries Schwingungsanalyse\par}
+  \vspace{0.6cm}
+  {\Large Versuchsbericht MTP/VTP\par}
+  \vspace{0.4cm}
+  {\large Einfluss von Abtastrate, Fensterfunktion, Frequenzauflösung,\\
+  Spektraldarstellung und Sensorposition auf die Signalanalyse\par}
+  \vspace{3cm}
+  \begin{tabular}{ll}
+    \toprule
+    Name & Gruppe \\
+    \midrule
+    Bastian Müller        & LRB7  \\
+    Kirill Konorov        & LRB7  \\
+    Dimitrios Eleftheriou & LRB5P \\
+    \bottomrule
+  \end{tabular}
+  \vfill
+  \begin{tabular}{ll}
+    Versuchsdatum: & 02.11.2026 \\
+    Messplatz:     & Platz 2, Schwingungsanalyse am Balken \\
+    Betreuer:      & Prof.\ Dr.\ Bastian Esefeld \\
+    Abgabe:        & \today
+  \end{tabular}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+% ==================================================================
+\section{Einleitung und Aufgabenstellung}
+% ==================================================================
+Ziel des Versuchs ist das Kennenlernen der Fourier-basierten Signalanalyse
+von Schwingungsmessungen und ihrer Zielkonflikte. Dazu wurden an einem
+schwingungsfähigen Balken Beschleunigungs- und Kraftsignale mit einer
+MATLAB-App erfasst und anschließend in MATLAB ausgewertet. Anhand der
+erfassten Daten soll der Einfluss
+\begin{enumerate}
+  \item der Abtastrate,
+  \item der Fensterfunktion,
+  \item der Frequenzauflösung,
+  \item der Spektraldarstellung ($\Sx$, $\Sxx$, $\Gxx$) und
+  \item der Sensorposition auf der Struktur
+\end{enumerate}
+ermittelt und mittels Erklärungen und Darstellungen belegt werden. Grundlage
+ist Kapitel~14.4 \glqq Signalanalyse im Frequenzbereich\grqq{} aus
+\cite{kuttner} sowie die Versuchsunterlage \cite{esefeld}.
+
+% ==================================================================
+\section{Theoretische Grundlagen}
+% ==================================================================
+
+\subsection{Digitalisierung, Abtasttheorem und Aliasing}
+Ein analoges (zeit- und wertkontinuierliches) Sensorsignal wird in der
+Messkette verstärkt, durch ein analoges Tiefpassfilter bandbegrenzt, von
+einer Sample-\&-Hold-Schaltung zeitdiskret abgetastet und vom A/D-Wandler
+wertdiskret quantisiert. Nach dem Abtasttheorem lässt sich ein Signal nur
+dann ohne Informationsverlust rekonstruieren, wenn die Abtastrate $f_s$
+mindestens doppelt so groß ist wie die höchste im Signal enthaltene Frequenz:
+\begin{equation}
+  f_s > 2\,f_{\max} \qquad\Leftrightarrow\qquad f_{\max} < f_N = \frac{f_s}{2}.
+\end{equation}
+Anteile oberhalb der Nyquist-Frequenz $f_N$ werden in den Bereich
+$0\ldots f_N$ gespiegelt (\emph{Aliasing}); eine Frequenz $f$ erscheint bei
+\begin{equation}
+  f_\text{alias} = \left| f - k\,f_s \right|, \qquad k \in \mathbb{N}
+  \text{ so, dass } 0 \le f_\text{alias} \le f_N .
+  \label{eq:alias}
+\end{equation}
+Gespiegelte Anteile sind im digitalen Signal nicht mehr von echten
+Signalanteilen unterscheidbar. Deshalb muss \emph{vor} der Abtastung ein
+analoges Anti-Aliasing-Tiefpassfilter (AA-Filter) eingesetzt werden. Wegen
+dessen endlicher Flankensteilheit ist der Bereich knapp unterhalb von $f_N$
+unbrauchbar; nutzbar ist typischerweise $f_{\max}\approx f_s/2{,}56$.
+Bei impulsartigen Signalen sind deutlich höhere Abtastraten erforderlich,
+da sonst Impulshöhe und -dauer falsch erfasst werden \cite{esefeld}.
+
+\subsection{Diskrete Fouriertransformation}
+Die diskrete Fouriertransformation (DFT) bildet einen Block von $N$
+Abtastwerten $x(k)$ auf $N$ komplexe Spektralwerte ab:
+\begin{equation}
+  X(n) = \sum_{k=0}^{N-1} x(k)\, \mathrm{e}^{-\mathrm{j}2\pi kn/N},
+  \qquad n = 0,\ldots,N-1 .
+\end{equation}
+Die \emph{FFT} (Fast Fourier Transform) ist kein anderes Ergebnis, sondern
+ein effizienter Algorithmus zur Berechnung der DFT. Durch rekursive Zerlegung
+(klassisch für $N=2^m$) sinkt der Rechenaufwand von $\mathcal{O}(N^2)$ auf
+$\mathcal{O}(N\log_2 N)$.
+
+Zwischen Blocklänge $T$, Abtastrate $f_s$, Linienzahl $N$ und
+Frequenzauflösung $\Delta f$ gilt
+\begin{equation}
+  T = N\,\Delta t = \frac{N}{f_s}, \qquad
+  \Delta f = \frac{1}{T} = \frac{f_s}{N}
+  \qquad\Rightarrow\qquad T\cdot\Delta f = 1 .
+  \label{eq:unschaerfe}
+\end{equation}
+Eine feine Frequenzauflösung erfordert also eine lange Blockdauer und damit
+eine schlechte Zeitauflösung (Unschärferelation der Signalanalyse). Die
+\emph{essentielle Annahme} der Fouriertransformation ist, dass sich das Signal
+aus (phasenverschobenen) Sinusschwingungen zusammensetzt und dass der
+analysierte Block eine Periode eines periodisch fortgesetzten, stationären
+Signals darstellt. Ist das Signal im Block nicht periodisch, entstehen an den
+Blockgrenzen Sprünge, die zum \emph{Leckeffekt} (Leakage) führen.
+
+\subsection{Fensterfunktionen}
+Durch Multiplikation des Blocks mit einer Fensterfunktion $w(k)$, die an den
+Blockrändern gegen null geht, wird das Signal in einen stetigen Verlauf
+gezwungen. Das Fenster verringert die Amplitude systematisch; dies wird mit
+dem Fenstermittelwert $F_M$ korrigiert. Gleichzeitig verbreitert es die
+effektive Bandbreite $B_\text{eff}$ einer Spektrallinie:
+\begin{equation}
+  F_M = \frac{1}{N}\sum_{k=0}^{N-1} w(k), \qquad
+  P_M = \frac{1}{N}\sum_{k=0}^{N-1} w^2(k), \qquad
+  B_\text{eff} = \frac{P_M}{T\,F_M^2} .
+\end{equation}
+Für das Rechteckfenster gilt $F_M = P_M = 1$ und $B_\text{eff}=\Delta f$.
+Das Hanning-Fenster ist der Standard für allgemeine Analysen, das
+Flattop-Fenster liefert die genauesten Amplituden periodischer Signale.
+
+\subsection{Spektraldarstellungen}
+Mit dem Spektrum $S(f)$ eines (gefensterten) Blocks werden folgende
+einseitigen Darstellungen unterschieden \cite{esefeld}:
+\begin{align}
+  \text{Betragsspektrum:}\quad & \Sx(f) = \frac{2\,|S(f)|}{N\,F_M}
+     && \text{Einheit: EU} \\
+  \text{Autoleistungsspektrum:}\quad & \Sxx(f) = \Sx(f)^2
+     && \text{Einheit: EU}^2 \\
+  \text{Leistungsdichte (PSD):}\quad & \Gxx(f) = \frac{\left(\Sx(f)/\sqrt{2}\right)^2}{B_\text{eff}} = \frac{\Sxx(f)}{2\,B_\text{eff}}
+     && \text{Einheit: EU}^2/\text{Hz}
+\end{align}
+$\Sx$ gibt die Amplitude eines Sinus direkt wieder, $\Gxx$ ist auf die
+Bandbreite normiert und damit für breitbandige Signale unabhängig von
+$\Delta f$ und Fenster. Für die Leistungsdichte gilt die Parseval-Beziehung
+$\tilde{x}^2 = \sum \Gxx\,\Delta f$.
+
+\subsection{Mittelung und Überlappung}
+Zur Verringerung der statistischen Unsicherheit werden die Spektren von
+$n_d$ Blöcken gemittelt (relativer Zufallsfehler $\varepsilon\approx
+1/\sqrt{n_d}$). Damit die durch das Fenster schwach gewichteten Blockränder
+nicht verloren gehen, werden die Blöcke überlappt (üblich: Hanning mit
+\SI{66.7}{\percent} Überlappung).
+
+\subsection{Übertragungsfunktion und Kohärenz}
+Für ein lineares, zeitinvariantes System wird die Übertragungsfunktion
+zwischen Eingang $x$ und Ausgang $y$ mit dem $H_1$-Schätzer aus gemittelten
+Kreuz- und Autospektren bestimmt. Die Kohärenz $\gamma^2$ (0\ldots1) gibt an,
+welcher Anteil des Ausgangs linear durch den Eingang erklärt wird:
+\begin{equation}
+  H_1(f) = \frac{G_{xy}(f)}{G_{xx}(f)}, \qquad
+  \gamma^2(f) = \frac{|G_{xy}(f)|^2}{G_{xx}(f)\,G_{yy}(f)} .
+\end{equation}
+
+% ==================================================================
+\section{Versuchsaufbau und Durchführung}
+% ==================================================================
+% TODO: Foto bzw. Skizze des Versuchsaufbaus einfuegen (Lage der Sensoren auf dem Balken)
+Der Balken wird an der Krafteinleitungsstelle zu Schwingungen angeregt.
+Die Signale werden mit einem NI-CompactDAQ-System (Modul \texttt{cDAQ3Mod1})
+erfasst. Die verwendeten Sensoren sind in \tab{tab:setup} zusammengestellt.
+Die Messapp rechnet die Spannungssignale beim Speichern über den
+Kalibrierwert in physikalische Einheiten um und legt Zeit und drei Kanäle
+als Binärdatei ab.
+
+\begin{table}[H]
+  \centering
+  \caption{Messkette laut Setup-Datei \texttt{VTP\_MTP\_Setup.csv}.}
+  \label{tab:setup}
+  \begin{tabular}{llllll}
+    \toprule
+    Kanal & Eingang & Bezeichnung & Sensor & Seriennr. & Kalibrierwert \\
+    \midrule
+    1 & ai1 & Balken          & MMF KS97.10 & SN 18005 & \SI{1.1448}{\milli\volt\per(\metre\per\second\squared)} \\
+    2 & ai2 & Einleitung      & MMF KS97.10 & SN 18006 & \SI{1.0674}{\milli\volt\per(\metre\per\second\squared)} \\
+    3 & ai3 & Krafteinleitung & PCB 208C02  & LW61271  & \SI{10.47}{\milli\volt\per\newton} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Es wurden die in \tab{tab:messungen} aufgeführten Messungen aufgezeichnet.
+Die Dateinamen geben die während der Messung in der App eingestellte
+Live-Darstellung an (Frequenzauflösung und Fensterfunktion). Die
+gespeicherten Rohdaten sind davon unabhängig; Fenster und Auflösung werden
+in der Auswertung nachträglich frei gewählt. Alle Messungen mit Ausnahme der
+Datei \texttt{0,1Hz-Rechteck-Zeit} ($f_s=\SI{51.2}{\kilo\hertz}$) wurden mit
+$f_s = \SI{3200}{\hertz}$ aufgezeichnet.
+
+\begin{table}[H]
+  \centering
+  \caption{Übersicht der Messungen. Effektivwerte ohne Gleichanteil,
+  $f_\text{dom}$: dominante Frequenz in Kanal~2.}
+  \label{tab:messungen}
+  \small
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    Datei & $f_s$ & $T$ & Werte & $\tilde a_\text{Balken}$ & $\tilde a_\text{Einl.}$ & $\tilde F$ & $f_\text{dom}$ \\
+          & in Hz & in s &      & in \si{\metre\per\second\squared} & in \si{\metre\per\second\squared} & in mN & in Hz \\
+    \midrule
+    \tabinput{tab_messungen}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Die Messungen lassen sich vier Anregungsarten zuordnen (\abb{fig:zeit500}
+bis \abb{fig:zeitunr}):
+\begin{itemize}
+  \item \textbf{Sinusanregung \SI{500}{\hertz}} (\texttt{0,25HZ-}, \texttt{1HZ-}, \texttt{4HZ-}Messungen)
+        mit einer schwachen 3.~Harmonischen bei \SI{1500}{\hertz}. In
+        \texttt{1HZ-Rechteck} endet die Anregung bei \SI{3.6}{\second}; für
+        stationäre Auswertungen wird nur der Bereich bis \SI{3.5}{\second} verwendet.
+  \item \textbf{Periodische Anregung \SI{100}{\hertz}} (\texttt{100Hz-}Messungen)
+        mit ausgeprägten ungeraden Harmonischen (300, 500, 700\,\ldots\,Hz).
+  \item \textbf{Unregelmäßige Anregung} in der Zeit (stochastische Stöße) bzw.\
+        in der Frequenz (veränderliche Anregungsfrequenz, ab ca.\ \SI{10.5}{\second}
+        nur noch schwache Schwingung bei \SI{29}{\hertz}).
+  \item \textbf{Hammerschläge} bei hoher Abtastrate (\texttt{0,1Hz-Rechteck-Zeit},
+        drei Schläge bei ca.\ 4,6\,s, 14,9\,s und 25,2\,s).
+\end{itemize}
+
+\textbf{Kraftkanal:} Kanal~3 zeigt in allen Messungen nur einen Gleichanteil
+von ca.\ \KraftMittel\,mN und ein Rauschen von \KraftEff\,mN (effektiv). Selbst
+bei der kräftigen \SI{100}{\hertz}-Anregung beträgt die \SI{100}{\hertz}-Linie
+nur \KraftHundert\,mN. Der Kraftsensor lag damit offensichtlich nicht im
+Kraftfluss bzw.\ war nicht aktiv. Eine Übertragungsfunktion Beschleunigung
+pro Kraft kann daher nicht gebildet werden; für die Untersuchung der
+Sensorposition wird stattdessen das Verhältnis der beiden
+Beschleunigungssignale verwendet (Abschnitt~\ref{sec:position}).
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A0_zeit_500Hz}
+  \caption{Zeitsignale der Messung \texttt{1HZ-Rechteck} (Sinus \SI{500}{\hertz}).
+  Links gesamte Messdauer, rechts Ausschnitt von \SI{20}{\milli\second} mit
+  den einzelnen Abtastwerten.}
+  \label{fig:zeit500}
+\end{figure}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A0_zeit_100Hz}
+  \caption{Ausschnitt der Zeitsignale bei periodischer Anregung mit \SI{100}{\hertz}
+  (\texttt{100Hz-1HZ-Rechteck}). Die Abweichung von der Sinusform zeigt die
+  höherharmonischen Anteile.}
+  \label{fig:zeit100}
+\end{figure}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A0_zeit_unregelmaessig}
+  \caption{Zeitsignale der unregelmäßigen Anregungen und der Messung mit
+  $f_s=\SI{51.2}{\kilo\hertz}$ (drei Hammerschläge).}
+  \label{fig:zeitunr}
+\end{figure}
+
+\paragraph{Auswertung.} Die Auswertung erfolgt mit den MATLAB-Skripten im
+Ordner \texttt{Auswertung\_MATLAB} (Anhang~\ref{sec:anhang}). Die Spektren
+werden wie in der Versuchsunterlage beschrieben mit einer Kurzzeit-FFT
+(entspricht \texttt{spectrogram}) berechnet: $N=\lceil f_s/\Delta f\rceil$,
+Fensterfunktion, Überlappung $2/3$, $\Sx = 2|S|/(N F_M)$, $\Sxx = \Sx^2$,
+$\Gxx = \Sxx/(2B_\text{eff})$, lineare Mittelung über alle Blöcke. Alle
+Gleichanteile werden vor der Analyse entfernt.
+
+% ==================================================================
+\section{Ergebnisse und Diskussion}
+% ==================================================================
+
+% ------------------------------------------------------------------
+\subsection{Einfluss der Abtastrate}
+% ------------------------------------------------------------------
+
+\paragraph{Aliasing.} Um den Einfluss der Abtastrate an realen Daten zu
+zeigen, wird die Abtastrate der \SI{500}{\hertz}-Messung nachträglich durch
+Weglassen von Abtastwerten auf \SI{1600}{\hertz} bzw.\ \SI{800}{\hertz}
+reduziert (\abb{fig:aliasing}, \tab{tab:aliasing}). Bei
+$f_s=\SI{1600}{\hertz}$ liegt die Harmonische bei \SI{1500}{\hertz} oberhalb
+von $f_N=\SI{800}{\hertz}$ und erscheint nach Gl.~\eqref{eq:alias} bei
+$|1500-1600|\,\si{\hertz} = \SI{100}{\hertz}$. Bei $f_s=\SI{800}{\hertz}$
+liegt auch die Grundschwingung oberhalb von $f_N=\SI{400}{\hertz}$ und wird
+als \SI{300}{\hertz}-Linie dargestellt -- mit voller Amplitude. Ohne Kenntnis
+des Originalsignals würde man fälschlich auf eine \SI{300}{\hertz}-Schwingung
+schließen (\abb{fig:aliasingzeit}). Wird vor der Reduktion ein Tiefpass
+(AA-Filter, $f_g=\SI{320}{\hertz}$) angewendet, verschwinden beide Linien;
+übrig bleiben nur die echten Anteile unterhalb von $f_g$.
+
+\begin{table}[H]
+  \centering
+  \caption{Größte und zweitgrößte Linie im Betragsspektrum (Kanal~2, Hanning,
+  $\Delta f=\SI{1}{\hertz}$) bei reduzierter Abtastrate. Original: \SI{500}{\hertz}
+  und \SI{1500}{\hertz}.}
+  \label{tab:aliasing}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    $f_s$ in Hz & $f_N$ in Hz & $f_1$ in Hz & $\Sx(f_1)$ in \si{\metre\per\second\squared} & $f_2$ in Hz & $\Sx(f_2)$ in \si{\metre\per\second\squared} \\
+    \midrule
+    \tabinput{tab_aliasing}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A1_aliasing}
+  \caption{Betragsspektren der \SI{500}{\hertz}-Messung bei
+  verschiedenen Abtastraten. Die gestrichelte Linie markiert $f_N=f_s/2$.}
+  \label{fig:aliasing}
+\end{figure}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A1_aliasing_zeit}
+  \caption{Zeitsignal bei \SI{3200}{\hertz} und bei \SI{800}{\hertz}
+  (jeder vierte Wert). Die Abtastwerte bei \SI{800}{\hertz} beschreiben
+  scheinbar eine langsamere Schwingung.}
+  \label{fig:aliasingzeit}
+\end{figure}
+
+Auch ohne Aliasing beeinflusst die Abtastrate die Darstellung im Zeitbereich:
+Bei \SI{500}{\hertz} und $f_s=\SI{3200}{\hertz}$ liegen nur 6,4 Werte je
+Periode vor (\abb{fig:zeit500}). Der Spitzenwert wird nicht zuverlässig
+getroffen; das Zeitsignal wirkt ungleichmäßig, obwohl das Spektrum die
+Amplitude korrekt liefert.
+
+\paragraph{Impulse.} \abb{fig:impuls} zeigt den stärksten Hammerschlag
+der \SI{51.2}{\kilo\hertz}-Messung, wenn nur jeder 2., 4., 8.\ bzw.\ 16.\ Wert
+verwendet wird. Der eigentliche Stoß dauert nur rund drei Abtastintervalle
+bei \SI{51.2}{\kilo\hertz} (ca.\ \SI{0.06}{\milli\second}). Bei geringerer
+Abtastrate wird das Maximum verfehlt: Der gemessene Spitzenwert sinkt von
+\SI{25.2}{\metre\per\second\squared} auf \SI{16.1}{\metre\per\second\squared}
+(\tab{tab:impuls}), und die Impulsform ist ab \SI{12.8}{\kilo\hertz} nur noch
+durch einen einzigen Wert repräsentiert. Die ermittelte Impulsbreite ist
+dann allein durch das Abtastintervall bestimmt und hat keine physikalische
+Aussage mehr. Wie stark der Spitzenwert unterschätzt wird, hängt zufällig von
+der Lage des Abtastrasters zum Impuls ab. \tab{tab:impulsstreuung} zeigt die
+Auswertung aller möglichen Rasterlagen der drei Schläge: Bei
+\SI{3200}{\hertz} wird der Spitzenwert im Mittel um \SI{55}{\percent} und im
+ungünstigsten Fall um \SI{77}{\percent} zu niedrig erfasst. Dies bestätigt die
+Aussage der Versuchsunterlage, dass impulsbehaftete Signale hohe Abtastraten
+erfordern.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A1_impuls}
+  \caption{Hammerschlag (Kanal~2) bei unterschiedlichen Abtastraten,
+  dargestellt als Treppenfunktion (Halteglied).}
+  \label{fig:impuls}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \begin{minipage}[t]{0.55\textwidth}
+    \centering
+    \captionof{table}{Spitzenwert und Impulsbreite (Werte $\ge\SI{50}{\percent}$
+    des Spitzenwerts) bei festem Abtastraster.}
+    \label{tab:impuls}
+    \small
+    \begin{tabular}{rrrrr}
+      \toprule
+      $f_s$ & $\Delta t$ & $\hat a$ & Werte & Breite \\
+      in Hz & in \si{\micro\second} & in \si{\metre\per\second\squared} & & in ms \\
+      \midrule
+      \tabinput{tab_impuls}
+      \bottomrule
+    \end{tabular}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.42\textwidth}
+    \centering
+    \captionof{table}{Unterschätzung des Spitzenwerts über alle Rasterlagen
+    (3 Schläge).}
+    \label{tab:impulsstreuung}
+    \small
+    \begin{tabular}{rrr}
+      \toprule
+      $f_s$ & Mittel & Maximum \\
+      in Hz & in \% & in \% \\
+      \midrule
+      \tabinput{tab_impuls_streuung}
+      \bottomrule
+    \end{tabular}
+  \end{minipage}
+\end{table}
+
+\paragraph{Frequenzinhalt oberhalb von \SI{1600}{\hertz}.} Das Spektrum der
+\SI{51.2}{\kilo\hertz}-Messung (\abb{fig:spek51k}, oben) enthält deutliche
+Anteile oberhalb von \SI{1600}{\hertz}, u.\,a.\ eine Resonanz bei ca.\
+\SI{7.5}{\kilo\hertz}. Rund \AnteilUeber\,\% der Signalleistung liegen oberhalb
+von \SI{1600}{\hertz}. Würde dieses Signal ohne AA-Filter mit
+\SI{3200}{\hertz} abgetastet, würden diese Anteile in den Messbereich
+gespiegelt: Der Rauschboden zwischen 600 und \SI{1600}{\hertz} steigt um etwa
+eine Dekade, die Leistung im Band bis \SI{1280}{\hertz} um den Faktor
+\AliasFaktor{} (\abb{fig:spek51k}, unten). Mit digitalem AA-Filter stimmt das
+Spektrum bis ca.\ \SI{1250}{\hertz} mit der Referenz überein; darüber setzt
+die Filterflanke ein (nutzbarer Bereich $\approx f_s/2{,}56$). Messsysteme mit
+Delta-Sigma-Wandlern, wie sie in CompactDAQ-Modulen üblich sind, besitzen ein
+solches Filter bereits intern; daher sind die mit \SI{3200}{\hertz}
+aufgezeichneten Messungen vermutlich frei von Aliasing.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A1_spektrum_51k}
+  \caption{Oben: Leistungsdichte der \SI{51.2}{\kilo\hertz}-Messung bis
+  \SI{25.6}{\kilo\hertz}. Unten: Vergleich mit Abtastung bei
+  \SI{3.2}{\kilo\hertz} ohne bzw.\ mit Anti-Aliasing-Filter.}
+  \label{fig:spek51k}
+\end{figure}
+
+\paragraph{Fazit Abtastrate.} Die Abtastrate legt den analysierbaren
+Frequenzbereich fest ($f_s/2$, praktisch $f_s/2{,}56$). Zu niedrige
+Abtastraten führen ohne AA-Filter zu Aliasing, das nachträglich nicht
+erkennbar und nicht korrigierbar ist, und bei Impulsen zu falschen
+Spitzenwerten und Impulsdauern. Hohe Abtastraten erzeugen dagegen große
+Datenmengen (\SI{51.2}{\kilo\hertz}: 1,36 Mio.\ Werte je Kanal in
+\SI{26.5}{\second}). Sinnvoll ist eine Orientierungsmessung mit hoher
+Abtastrate und die anschließende Anpassung an den Bedarf.
+
+% ------------------------------------------------------------------
+\subsection{Einfluss der Fensterfunktion}
+% ------------------------------------------------------------------
+
+\paragraph{Eigenschaften der Fenster.} \abb{fig:fenstereig} zeigt die drei
+untersuchten Fensterfunktionen und ihre Spektren, \tab{tab:fenster} die
+Kennwerte. Das Rechteckfenster hat die schmalste Hauptkeule, aber hohe
+Nebenkeulen (\SI{-13}{\decibel}). Das Hanning-Fenster dämpft die Nebenkeulen
+stark (\SI{-31.5}{\decibel}, danach schneller Abfall), verbreitert die
+Hauptkeule aber auf $B_\text{eff} = 1{,}5\,\Delta f$. Das Flattop-Fenster hat
+eine sehr breite, oben flache Hauptkeule ($B_\text{eff} = 3{,}77\,\Delta f$)
+und praktisch keinen Amplitudenfehler.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A2_fenster_eigenschaften}
+  \caption{Fensterfunktionen (links) und deren Betragsspektren in dB über dem
+  Frequenzabstand in Linien (rechts).}
+  \label{fig:fenstereig}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Kennwerte der Fensterfunktionen (berechnet für $N=3200$). Der
+  maximale Amplitudenfehler gilt für ein Signal genau zwischen zwei Linien.}
+  \label{tab:fenster}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Fenster & $F_M$ & $P_M$ & $B_\text{eff}\cdot T$ & max.\ Amplitudenfehler & höchste Nebenkeule \\
+            &       &       &                       & in dB                   & in dB \\
+    \midrule
+    \tabinput{tab_fenster}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Die berechneten Werte entsprechen der Theorie: Hanning hat bis
+\SI{1.42}{\decibel} Amplitudenfehler (vgl.\ \cite{esefeld}); das hier
+verwendete MATLAB-Flattop-Fenster liegt mit \SI{0.01}{\decibel} sogar noch
+unter dem in der Unterlage genannten Wert von \SI{0.19}{\decibel}.
+
+\paragraph{Anwendung auf die Messung.} Die \SI{100}{\hertz}-Messung
+(\texttt{100Hz-1HZ-Flattop}, \SI{4}{\second}) wird mit allen drei Fenstern in
+zwei Fällen ausgewertet (\abb{fig:fenstermess}, \tab{tab:fenstermess}):
+\begin{itemize}
+  \item \textbf{Fall A} ($N=3200$, $\Delta f=\SI{1}{\hertz}$): Jeder Block
+        enthält genau 100 Perioden, \SI{100}{\hertz} liegt exakt auf einer
+        Linie. Alle Fenster liefern dieselbe Amplitude
+        (\SI{39.4}{\metre\per\second\squared}). Das Rechteckfenster ist hier
+        sogar optimal, da kein Leckeffekt auftritt.
+  \item \textbf{Fall B} ($N=1072$, $\Delta f=\SI{2.985}{\hertz}$): Jeder Block
+        enthält 33,5 Perioden, \SI{100}{\hertz} liegt genau zwischen zwei
+        Linien (ungünstigster Fall). Das Rechteckfenster unterschätzt die
+        Amplitude um \SI{36}{\percent}, Hanning um \SI{15}{\percent}, Flattop
+        nur um \SI{0.07}{\percent}. Zusätzlich hebt der Leckeffekt beim
+        Rechteckfenster den gesamten Rauschboden um ca.\ zwei Dekaden an;
+        schwache Linien (z.\,B.\ \SI{200}{\hertz}, \SI{400}{\hertz}) gehen im
+        Leck der starken Linien unter. Mit Hanning und Flattop bleibt die
+        Dynamik erhalten.
+\end{itemize}
+Die Messung bestätigt damit die theoretischen Werte aus \tab{tab:fenster}
+exakt. \abb{fig:fensterzeit} zeigt die Ursache: Beim Rechteckfenster
+entstehen an den Blockgrenzen Sprünge im periodisch fortgesetzten Signal,
+Hanning und Flattop führen das Signal stetig gegen null.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A2_fenster_messung}
+  \caption{Betragsspektren der \SI{100}{\hertz}-Messung (Kanal~2) mit
+  verschiedenen Fenstern. Oben: Signalfrequenz auf einer Linie, unten:
+  Signalfrequenz zwischen zwei Linien. Rechts Ausschnitt um \SI{100}{\hertz}
+  (Punkte = Spektrallinien).}
+  \label{fig:fenstermess}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Gemessene Amplituden $\Sx$ in \si{\metre\per\second\squared} bei
+  \SI{100}{\hertz} und \SI{300}{\hertz}. Abweichung von Fall B bezogen auf
+  Rechteck, Fall A.}
+  \label{tab:fenstermess}
+  \begin{tabular}{lrrrrrr}
+    \toprule
+     & \multicolumn{3}{c}{\SI{100}{\hertz}} & \multicolumn{3}{c}{\SI{300}{\hertz}} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+    Fenster & Fall A & Fall B & Abw.\ in \% & Fall A & Fall B & Abw.\ in \% \\
+    \midrule
+    \tabinput{tab_fenster_messung}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A2_fenster_zeit}
+  \caption{Ein Block (Fall B) nach Multiplikation mit der Fensterfunktion und
+  Amplitudenkorrektur $1/F_M$; gestrichelt die skalierte Fensterfunktion.}
+  \label{fig:fensterzeit}
+\end{figure}
+
+\paragraph{Fazit Fensterfunktion.} Die Fensterfunktion bestimmt den
+Kompromiss zwischen Amplitudengenauigkeit, Frequenzselektivität und Dynamik.
+Rechteck nur bei Signalen, die exakt periodisch im Block sind oder bei
+Impulsen, die vollständig im Block abklingen (Hammerschlag). Hanning als
+Standard für unbekannte bzw.\ breitbandige Signale. Flattop für die genaue
+Amplitudenbestimmung sinusförmiger Signale. Ergebnisse sind nur bei gleicher
+Fensterung vergleichbar.
+
+% ------------------------------------------------------------------
+\subsection{Einfluss der Frequenzauflösung}
+% ------------------------------------------------------------------
+
+\paragraph{Periodisches Signal.} \abb{fig:aufloesungsinus} und
+\tab{tab:aufloesung} zeigen die \SI{100}{\hertz}-Messung mit
+$\Delta f = 0{,}25$, 1 und \SI{4}{\hertz} (Hanning). Die Amplitude der Linie
+ist unabhängig von $\Delta f$ (\SI{39.4}{\metre\per\second\squared}), die
+Linienbreite skaliert dagegen mit $\Delta f$. Gleichzeitig wächst die nötige
+Blockdauer $T=1/\Delta f$: Bei $\Delta f=\SI{0.25}{\hertz}$ ist ein Block
+\SI{4}{\second} lang, sodass die \SI{4}{\second} lange Messung nur
+\emph{einen} Block ohne Mittelung liefert. Die Messung
+\texttt{0,25HZ-Rechteck} ist mit \SI{1.5}{\second} sogar kürzer als ein Block
+und lässt sich mit dieser Auflösung gar nicht auswerten. Gröbere Auflösung
+erlaubt bei gleicher Messdauer viele Mittelungen und damit ein ruhigeres
+Spektrum.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A3_aufloesung_sinus}
+  \caption{Betragsspektrum der \SI{100}{\hertz}-Messung (Kanal~2, Hanning)
+  bei verschiedenen Frequenzauflösungen.}
+  \label{fig:aufloesungsinus}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Parameter der Analyse für die \SI{4}{\second} lange
+  \SI{100}{\hertz}-Messung (Hanning, \SI{66.7}{\percent} Überlappung).}
+  \label{tab:aufloesung}
+  \begin{tabular}{rrrrrr}
+    \toprule
+    $\Delta f$ in Hz & $N$ & $T$ in s & Mittelungen $n_d$ & $B_\text{eff}$ in Hz & $\Sx(\SI{100}{\hertz})$ in \si{\metre\per\second\squared} \\
+    \midrule
+    \tabinput{tab_aufloesung}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Trennung benachbarter Frequenzen.} \abb{fig:aufloesungres} zeigt
+die Leistungsdichte des Balkensensors bei unregelmäßiger Anregung. Mit
+$\Delta f = \SI{16}{\hertz}$ verschmelzen die Spitzen bei ca.\ \SI{11}{\hertz}
+und \SI{15}{\hertz} sowie die Gruppe zwischen 37 und \SI{45}{\hertz} zu
+breiten Hügeln, die Einbrüche bei \SI{28}{\hertz}, \SI{95}{\hertz} und
+\SI{197}{\hertz} werden nicht mehr aufgelöst, Spitzen werden abgeflacht und
+verschoben. Bei
+$\Delta f = \SI{0.25}{\hertz}$ sind die Strukturen am feinsten aufgelöst,
+das Spektrum ist wegen der nur 8 Mittelungen aber stark verrauscht
+(statistischer Fehler $\varepsilon \approx 1/\sqrt{8} \approx \SI{35}{\percent}$).
+$\Delta f = 1\ldots\SI{4}{\hertz}$ liefert hier den besten Kompromiss.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A3_aufloesung_resonanzen}
+  \caption{Leistungsdichte des Balkensensors (Messung \texttt{Unregelmaessig-Zeit})
+  bei verschiedenen Frequenzauflösungen.}
+  \label{fig:aufloesungres}
+\end{figure}
+
+\paragraph{Zeit-Frequenz-Unschärfe.} Bei der Messung mit veränderlicher
+Anregungsfrequenz wird der Zielkonflikt nach Gl.~\eqref{eq:unschaerfe}
+sichtbar (\abb{fig:spektrogramm}). Mit $\Delta f=\SI{0.5}{\hertz}$
+($T=\SI{2}{\second}$) sind die Frequenzen fein aufgelöst (z.\,B.\ die
+schmale Linie bei \SI{29}{\hertz} nach Ende der Anregung), der Zeitpunkt des
+Anregungsendes bei ca.\ \SI{10.3}{\second} ist aber über rund \SI{2}{\second}
+verschmiert. Mit $\Delta f=\SI{16}{\hertz}$ ($T=\SI{62.5}{\milli\second}$) ist
+der Zeitpunkt scharf erkennbar, die Frequenzen verschwimmen jedoch zu
+\SI{16}{\hertz} breiten Bändern. Beides gleichzeitig beliebig genau zu
+bestimmen ist nicht möglich.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A3_spektrogramm}
+  \caption{Spektrogramme (Leistungsdichte in dB, Kanal~2) der Messung
+  \texttt{Unregelmaessig-Frequenz} bei verschiedenen Frequenzauflösungen.}
+  \label{fig:spektrogramm}
+\end{figure}
+
+\paragraph{Fazit Frequenzauflösung.} Die Frequenzauflösung legt über
+$T = 1/\Delta f$ die Blockdauer fest. Feine Auflösung trennt benachbarte
+Frequenzen, benötigt aber lange stationäre Messungen und liefert bei gegebener
+Messdauer wenige Mittelungen sowie eine schlechte Zeitauflösung. Grobe
+Auflösung verschmiert Frequenzen, erlaubt aber viele Mittelungen und das
+Verfolgen zeitlicher Änderungen. $\Delta f$ muss an das Signal und die
+Fragestellung angepasst werden.
+
+% ------------------------------------------------------------------
+\subsection{Einfluss der Spektraldarstellung}
+% ------------------------------------------------------------------
+
+\paragraph{Variation der Frequenzauflösung.} \abb{fig:sxsxxgxx} stellt
+$\Sx$, $\Sxx$ und $\Gxx$ eines periodischen (links) und eines breitbandigen
+Signals (rechts) für drei Frequenzauflösungen gegenüber, \tab{tab:spektrendf}
+fasst die Kennwerte zusammen:
+\begin{itemize}
+  \item \textbf{Betragsspektrum $\Sx$:} Die Amplitude der periodischen Linie
+        ist unabhängig von $\Delta f$ und entspricht direkt der
+        Sinusamplitude. Der Rauschboden und das gesamte breitbandige Spektrum
+        steigen dagegen mit $\sqrt{\Delta f}$ (Faktor 2 je Vervierfachung).
+  \item \textbf{Autoleistungsspektrum $\Sxx$:} Quadrat von $\Sx$; die
+        Linienwerte sind konstant (Amplitude$^2$), der breitbandige Anteil
+        steigt proportional zu $\Delta f$. Durch das Quadrieren treten
+        energiereiche Bereiche stärker hervor.
+  \item \textbf{Leistungsdichte $\Gxx$:} Der breitbandige Anteil und der
+        Rauschboden sind unabhängig von $\Delta f$ (die drei Kurven rechts
+        liegen übereinander). Die Höhe der periodischen Linie skaliert
+        dagegen mit $1/B_\text{eff}$, da die gesamte Leistung des Sinus auf
+        eine Linie der Breite $B_\text{eff}$ verteilt wird.
+\end{itemize}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A4_sx_sxx_gxx}
+  \caption{$\Sx$, $\Sxx$ und $\Gxx$ (Kanal~2, Hanning) eines periodischen
+  (links, \texttt{100Hz-1HZ-Flattop}) und eines breitbandigen Signals
+  (rechts, \texttt{Unregelmaessig-Zeit}) bei verschiedenen Frequenzauflösungen.}
+  \label{fig:sxsxxgxx}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Wert der \SI{100}{\hertz}-Linie und Median des Rauschbodens
+  (1350\ldots\SI{1550}{\hertz}) für die drei Spektraldarstellungen (Hanning).}
+  \label{tab:spektrendf}
+  \small
+  \begin{tabular}{rrrrrrr}
+    \toprule
+     & \multicolumn{3}{c}{Linie \SI{100}{\hertz}} & \multicolumn{3}{c}{Rauschboden} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+    $\Delta f$ in Hz & $\Sx$ in \si{\metre\per\second\squared} & $\Sxx$ in \si{(\metre\per\second\squared)^2} & $\Gxx$ in \si{(\metre\per\second\squared)^2\per\hertz}
+                     & $\Sx$ & $\Sxx$ & $\Gxx$ \\
+    \midrule
+    \tabinput{tab_spektren_df}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Variation der Fensterfunktion.} Dasselbe Verhalten zeigt sich bei
+Variation des Fensters (\abb{fig:fenstersxgxx}, \tab{tab:spektrenfenster}):
+$\Sx$ liefert für die periodische Linie mit allen Fenstern dieselbe Amplitude,
+$\Gxx$ dagegen fällt mit wachsendem $B_\text{eff}$. Beim breitbandigen Signal
+ist es umgekehrt: $\Gxx$ ist nahezu fensterunabhängig, $\Sx$ steigt mit
+$\sqrt{B_\text{eff}/\Delta f}$.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A4_fenster_sx_gxx}
+  \caption{$\Sx$ (oben) und $\Gxx$ (unten) mit verschiedenen Fenstern bei
+  $\Delta f=\SI{1}{\hertz}$; links periodisches, rechts breitbandiges Signal.}
+  \label{fig:fenstersxgxx}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Einfluss des Fensters ($\Delta f=\SI{1}{\hertz}$): periodische Linie
+  bei \SI{100}{\hertz} und Mittelwert des breitbandigen Signals im Bereich
+  10\ldots\SI{50}{\hertz}.}
+  \label{tab:spektrenfenster}
+  \begin{tabular}{lrrrrr}
+    \toprule
+     & & \multicolumn{2}{c}{periodisch, \SI{100}{\hertz}} & \multicolumn{2}{c}{breitbandig, 10\ldots\SI{50}{\hertz}} \\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Fenster & $B_\text{eff}$ in Hz & $\Sx$ & $\Gxx$ & $\Sx$ & $\Gxx$ \\
+    \midrule
+    \tabinput{tab_spektren_fenster}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Energiebilanz.} Nach Parseval muss die Fläche unter $\Gxx$ dem
+Quadrat des Effektivwerts entsprechen. \tab{tab:parseval} bestätigt dies für
+alle Fenster mit Abweichungen unter \SI{1.5}{\percent} (breitbandig mit
+Flattop \SI{5}{\percent}, da das kurze effektive Zeitfenster die einzelnen
+Stöße ungleichmäßig gewichtet). Wird der Effektivwert dagegen aus $\Sxx$
+berechnet, ist er nur beim Rechteckfenster korrekt und wird sonst um den
+Faktor $\sqrt{B_\text{eff}/\Delta f}$ überschätzt (Hanning $\sqrt{1{,}5}$,
+Flattop $\sqrt{3{,}77}$). Die Amplitudenkorrektur mit $F_M$ verfälscht also
+die Signalenergie -- wie in der Versuchsunterlage angegeben.
+
+\begin{table}[H]
+  \centering
+  \caption{Effektivwert von Kanal~2 in \si{\metre\per\second\squared} aus dem
+  Zeitsignal und aus den Spektren ($\Delta f=\SI{1}{\hertz}$).}
+  \label{tab:parseval}
+  \begin{tabular}{llrrr}
+    \toprule
+    Signal & Fenster & $\tilde x$ (Zeit) & $\sqrt{\sum \Gxx\,\Delta f}$ & $\sqrt{\sum \Sxx/2}$ \\
+    \midrule
+    \tabinput{tab_parseval}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Fazit Spektraldarstellung.} $\Sx$ eignet sich für periodische
+(diskrete) Signale, da Amplituden direkt ablesbar sind; die Werte
+breitbandiger Anteile hängen jedoch von $\Delta f$ und Fenster ab. $\Sxx$
+betont energiereiche Frequenzbereiche, ist aber ebenso parameterabhängig.
+$\Gxx$ ist für breitbandige und stochastische Signale die geeignete
+Darstellung, da sie unabhängig von den FT-Parametern ist und Vergleiche
+zwischen verschiedenen Einstellungen und Analysatoren erlaubt; für Sinus-Linien
+ist der Zahlenwert dagegen parameterabhängig. Die Wahl der Darstellung muss
+daher stets mit angegeben werden.
+
+% ------------------------------------------------------------------
+\subsection{Einfluss der Sensorposition}\label{sec:position}
+% ------------------------------------------------------------------
+
+\paragraph{Spektren an beiden Positionen.} \abb{fig:positionen} vergleicht
+die Betragsspektren des Sensors an der Krafteinleitung (Kanal~2) und auf dem
+Balken (Kanal~1) bei periodischer Anregung (Flattop, um Amplitudenfehler
+auszuschließen). Beide Sensoren erfassen dieselben Frequenzen, aber mit
+deutlich unterschiedlichen Amplituden. Das Amplitudenverhältnis hängt stark
+von der Frequenz ab (\tab{tab:positionen}): Bei \SI{200}{\hertz} erreicht
+den Balkensensor nur \SI{5}{\percent} (\SI{-26}{\decibel}) der Beschleunigung
+an der Einleitung, bei \SI{1300}{\hertz} dagegen \SI{69}{\percent}. Das
+Spektrum am Balken ist damit nicht einfach eine skalierte Kopie des
+Anregungsspektrums; die Rangfolge der Harmonischen ändert sich (z.\,B.\ ist
+am Balken die \SI{900}{\hertz}-Linie stärker als die \SI{700}{\hertz}-Linie).
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A5_spektren_positionen}
+  \caption{Betragsspektren (Flattop, $\Delta f=\SI{1}{\hertz}$) an der
+  Krafteinleitung und auf dem Balken.}
+  \label{fig:positionen}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Amplituden $\Sx$ in \si{\metre\per\second\squared} an beiden
+  Sensorpositionen und deren Verhältnis $|H| = S_{x,\text{Balken}}/S_{x,\text{Einl.}}$.}
+  \label{tab:positionen}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Anregung & $f$ in Hz & Einleitung & Balken & $|H|$ & $|H|$ in dB \\
+    \midrule
+    \tabinput{tab_positionen}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Übertragungsfunktion.} Aus den beiden unregelmäßigen
+(breitbandigen) Messungen wird die Übertragungsfunktion von der Einleitung
+zum Balken mit dem $H_1$-Schätzer berechnet (\abb{fig:uebertragung}). Die
+aus den Sinusmessungen bestimmten Verhältnisse (Punkte) liegen sehr gut auf
+dieser Kurve -- beide Verfahren liefern also konsistente Ergebnisse. Die
+Übertragungsfunktion zeigt ausgeprägte Maxima (\tab{tab:resonanzen}) und
+dazwischen tiefe Minima bei ca.\ 28, 97, 200, 335 und \SI{512}{\hertz}:
+\begin{itemize}
+  \item An den \textbf{Maxima} (Resonanzen des Balkens) schwingt der Balken an
+        der Sensorposition bis zum 2,7-fachen der Einleitungsstelle.
+        Gleichzeitig zeigt die Leistungsdichte an der Einleitung dort
+        Einbrüche: Der schwingende Balken wirkt auf die Einleitungsstelle wie
+        ein Tilger. Die geringe Anregung an der Einleitung erklärt auch die
+        dort reduzierte Kohärenz.
+  \item An den \textbf{Minima} liegt der Balkensensor nahezu in einem
+        Schwingungsknoten der jeweils dominierenden Schwingform. Ein Sensor an
+        dieser Position würde die entsprechende Frequenz kaum erfassen.
+\end{itemize}
+Oberhalb von ca.\ \SI{700}{\hertz} fällt die Kohärenz ab, da die
+unregelmäßige Anregung dort nur noch wenig Energie enthält.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\textwidth]{A5_uebertragung}
+  \caption{Oben: Leistungsdichte beider Sensoren bei unregelmäßiger
+  Anregung. Mitte: Betrag der Übertragungsfunktion Einleitung $\rightarrow$
+  Balken ($H_1$, $\Delta f=\SI{2}{\hertz}$, Hanning) mit den Werten aus
+  \tab{tab:positionen}. Unten: Kohärenz.}
+  \label{fig:uebertragung}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Maxima der Übertragungsfunktion Einleitung $\rightarrow$ Balken.}
+  \label{tab:resonanzen}
+  \begin{tabular}{rrr}
+    \toprule
+    $f$ in Hz & $|H_1|$ & $\gamma^2$ \\
+    \midrule
+    \tabinput{tab_resonanzen}
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Fazit Sensorposition.} Das gemessene Spektrum ist immer das
+Produkt aus Anregung und Übertragungsverhalten der Struktur zwischen
+Anregungs- und Messort. Je nach Sensorposition werden Frequenzen um mehr als
+\SI{20}{\decibel} verstärkt oder abgeschwächt; liegt der Sensor in einem
+Schwingungsknoten, wird die zugehörige Eigenform nicht erfasst. Messpunkte
+müssen daher bewusst gewählt werden (nicht in Knoten, möglichst an Stellen
+großer Schwingungsamplitude), und Ergebnisse verschiedener Messpunkte sind
+nur unter Angabe der Position vergleichbar. Zur Ermittlung von
+Strukturresonanzen sind mehrere Messpunkte oder eine Übertragungsfunktion mit
+gemessener Anregungskraft vorzuziehen.
+
+% ==================================================================
+\section{Zusammenfassung}
+% ==================================================================
+Die Untersuchungen belegen, dass das Ergebnis einer Fourieranalyse nie
+\glqq falsch\grqq, aber stets von den Daten und der Parametrierung abhängig
+ist:
+\begin{description}
+  \item[Abtastrate:] bestimmt den Frequenzbereich ($f_s/2$). Zu niedrige
+    Abtastraten führen ohne AA-Filter zu Aliasing (\SI{500}{\hertz} erscheint
+    bei $f_s=\SI{800}{\hertz}$ als \SI{300}{\hertz}) und bei Impulsen zu
+    stark unterschätzten Spitzenwerten (bis \SI{77}{\percent} bei
+    \SI{3.2}{\kilo\hertz}).
+  \item[Fensterfunktion:] bestimmt Amplitudenfehler und Leckeffekt. Liegt die
+    Signalfrequenz zwischen zwei Linien, betragen die Fehler
+    \SI{36}{\percent} (Rechteck), \SI{15}{\percent} (Hanning) und
+    \SI{0.07}{\percent} (Flattop).
+  \item[Frequenzauflösung:] $T\cdot\Delta f = 1$. Feine Auflösung trennt
+    benachbarte Frequenzen, erfordert aber lange Messungen, liefert wenige
+    Mittelungen und eine schlechte Zeitauflösung.
+  \item[Spektraldarstellung:] $\Sx$ gibt Sinusamplituden unabhängig von den
+    Parametern wieder, $\Gxx$ breitbandige Signale. Nur $\Gxx$ erfüllt die
+    Energiebilanz unabhängig vom Fenster.
+  \item[Sensorposition:] Das Amplitudenverhältnis zwischen zwei Messorten
+    schwankt zwischen \SI{-26}{\decibel} und \SI{+9}{\decibel}; Resonanzen und
+    Schwingungsknoten bestimmen, was ein Sensor \glqq sieht\grqq.
+\end{description}
+Für die Praxis folgt: Orientierungsmessung mit hoher Abtastrate,
+Zeitsignal prüfen, Parameter ($f_s$, $\Delta f$, Fenster, Überlappung,
+Darstellung) an Signal und Fragestellung anpassen und stets mit dem Ergebnis
+dokumentieren -- nur bei gleicher Parametrierung sind Ergebnisse
+vergleichbar.
+
+% ==================================================================
+\begin{thebibliography}{9}
+  \bibitem{esefeld} Esefeld, B.: \emph{MTP/VTP Schwingungsanalyse},
+    Versuchsunterlage, Hochschule München FK03, Labor für
+    Schwingungstechnik und Maschinendynamik, 2026.
+  \bibitem{kuttner} Kuttner, T.; Rohnen, A.: \emph{Praxis der
+    Schwingungsmessung -- Messtechnik und Signalanalyse mit MATLAB},
+    2.~Aufl., Springer Vieweg, Wiesbaden, 2019.
+  \bibitem{zollner} Zollner, M.: \emph{Frequenzanalyse},
+    Autoren-Selbstverlag, Regensburg, 1999.
+  \bibitem{moeser} Möser, M. (Hrsg.): \emph{Messtechnik der Akustik},
+    Springer-Verlag, Berlin, 2010.
+  \bibitem{kammeyer} Kammeyer, K.\,D.: \emph{Digitale Signalverarbeitung},
+    6.~Aufl., Teubner, 2006.
+  \bibitem{din1311} DIN 1311:2000: \emph{Schwingungen und schwingungsfähige Systeme}.
+  \bibitem{din45662} DIN 45662:1996-12: \emph{Schwingungsmesseinrichtung --
+    Allgemeine Anforderungen und Begriffe}.
+\end{thebibliography}
+
+% ==================================================================
+\appendix
+\clearpage
+\section{MATLAB-Quellcode}\label{sec:anhang}
+% ==================================================================
+Die komplette Auswertung wird mit \texttt{run\_alle.m} gestartet und erzeugt
+alle Abbildungen und Tabellen dieses Berichts. Fensterfunktionen und
+Kurzzeit-FFT sind nachgebildet, sodass keine Signal Processing Toolbox
+erforderlich ist; die Ergebnisse sind identisch zu \texttt{hann},
+\texttt{flattopwin} und \texttt{spectrogram}.
+
+\subsection*{Hauptskript und Hilfsfunktionen}
+\lstinputlisting[title={run\_alle.m}]{../Auswertung_MATLAB/run_alle.m}
+\lstinputlisting[title={lib/spektrum.m}]{../Auswertung_MATLAB/lib/spektrum.m}
+\lstinputlisting[title={lib/stft.m}]{../Auswertung_MATLAB/lib/stft.m}
+\lstinputlisting[title={lib/fenster.m}]{../Auswertung_MATLAB/lib/fenster.m}
+\lstinputlisting[title={lib/uebertragung.m}]{../Auswertung_MATLAB/lib/uebertragung.m}
+\lstinputlisting[title={lib/lade\_messung.m}]{../Auswertung_MATLAB/lib/lade_messung.m}
+\lstinputlisting[title={lib/tiefpass\_fir.m}]{../Auswertung_MATLAB/lib/tiefpass_fir.m}
+
+\subsection*{Auswerteskripte}
+\lstinputlisting[title={A1\_Abtastrate.m}]{../Auswertung_MATLAB/A1_Abtastrate.m}
+\lstinputlisting[title={A2\_Fensterfunktion.m}]{../Auswertung_MATLAB/A2_Fensterfunktion.m}
+\lstinputlisting[title={A3\_Frequenzaufloesung.m}]{../Auswertung_MATLAB/A3_Frequenzaufloesung.m}
+\lstinputlisting[title={A4\_Spektraldarstellung.m}]{../Auswertung_MATLAB/A4_Spektraldarstellung.m}
+\lstinputlisting[title={A5\_Sensorposition.m}]{../Auswertung_MATLAB/A5_Sensorposition.m}
+
+\end{document}

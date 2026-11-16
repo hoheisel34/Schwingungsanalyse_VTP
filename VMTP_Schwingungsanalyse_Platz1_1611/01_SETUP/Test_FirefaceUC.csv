@@ -1,0 +1,3 @@
+Geraet;Chan;Type;Name;SensorName;Seriennummer;Unit;Kalibrierwert;X_Koord;Y_Koord;Z_Koord
+Audio6;1;undefiniert;Kanal im Leerlauf;;;Bitte Messgröße definieren;1;0;0;0
+Audio6;2;undefiniert;Mikrofon;MTG M373;0159;Pa;22;0;0;0
