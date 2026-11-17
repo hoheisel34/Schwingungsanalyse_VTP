@@ -1,0 +1,46 @@
+\babel@toc {ngerman}{}\relax 
+\contentsline {section}{\numberline {1}Einleitung und Aufgabenstellung}{3}{section.1}%
+\contentsline {section}{\numberline {2}Theoretische Grundlagen}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Digitalisierung, Abtasttheorem und Aliasing}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Diskrete Fouriertransformation}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Fensterfunktionen}{4}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Spektraldarstellungen}{4}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Mittelung und Überlappung}{4}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Übertragungsfunktion und Kohärenz}{5}{subsection.2.6}%
+\contentsline {section}{\numberline {3}Versuchsaufbau und Durchführung}{5}{section.3}%
+\contentsline {paragraph}{\nonumberline Versuchsprogramm.}{5}{paragraph*.3}%
+\contentsline {paragraph}{\nonumberline Plausibilitätsprüfung.}{6}{paragraph*.4}%
+\contentsline {paragraph}{\nonumberline Zeitsignale.}{7}{paragraph*.7}%
+\contentsline {paragraph}{\nonumberline Auswertung.}{7}{paragraph*.11}%
+\contentsline {section}{\numberline {4}Ergebnisse und Diskussion}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Einfluss der Abtastrate}{7}{subsection.4.1}%
+\contentsline {paragraph}{\nonumberline Messung mit drei Abtastraten.}{7}{paragraph*.12}%
+\contentsline {paragraph}{\nonumberline Aliasing.}{9}{paragraph*.15}%
+\contentsline {paragraph}{\nonumberline Zeitbereich.}{11}{paragraph*.18}%
+\contentsline {paragraph}{\nonumberline Impulse.}{11}{paragraph*.20}%
+\contentsline {paragraph}{\nonumberline Frequenzinhalt eines Impulses.}{12}{paragraph*.25}%
+\contentsline {paragraph}{\nonumberline Fazit Abtastrate.}{12}{paragraph*.27}%
+\contentsline {subsection}{\numberline {4.2}Einfluss der Fensterfunktion}{13}{subsection.4.2}%
+\contentsline {paragraph}{\nonumberline Eigenschaften der Fenster.}{13}{paragraph*.28}%
+\contentsline {paragraph}{\nonumberline Anwendung auf die Messung.}{14}{paragraph*.31}%
+\contentsline {paragraph}{\nonumberline Fazit Fensterfunktion.}{14}{paragraph*.35}%
+\contentsline {subsection}{\numberline {4.3}Einfluss der Frequenzauflösung}{16}{subsection.4.3}%
+\contentsline {paragraph}{\nonumberline Periodisches Signal.}{16}{paragraph*.36}%
+\contentsline {paragraph}{\nonumberline Auflösung von Resonanzen.}{16}{paragraph*.39}%
+\contentsline {paragraph}{\nonumberline Zeit-Frequenz-Unschärfe.}{16}{paragraph*.41}%
+\contentsline {paragraph}{\nonumberline Fazit Frequenzauflösung.}{17}{paragraph*.43}%
+\contentsline {subsection}{\numberline {4.4}Einfluss der Spektraldarstellung}{18}{subsection.4.4}%
+\contentsline {paragraph}{\nonumberline Variation der Frequenzauflösung.}{18}{paragraph*.44}%
+\contentsline {paragraph}{\nonumberline Variation der Fensterfunktion.}{18}{paragraph*.47}%
+\contentsline {paragraph}{\nonumberline Energiebilanz.}{18}{paragraph*.50}%
+\contentsline {paragraph}{\nonumberline Fazit Spektraldarstellung.}{20}{paragraph*.52}%
+\contentsline {subsection}{\numberline {4.5}Einfluss der Sensorposition}{21}{subsection.4.5}%
+\contentsline {paragraph}{\nonumberline Erwartung.}{21}{paragraph*.53}%
+\contentsline {paragraph}{\nonumberline Sinusanregung.}{21}{paragraph*.54}%
+\contentsline {paragraph}{\nonumberline Übertragungsfunktionen.}{22}{paragraph*.57}%
+\contentsline {paragraph}{\nonumberline Impulsanregung.}{22}{paragraph*.60}%
+\contentsline {paragraph}{\nonumberline Fazit Sensorposition.}{23}{paragraph*.62}%
+\contentsline {section}{\numberline {5}Zusammenfassung}{24}{section.5}%
+\contentsline {section}{\nonumberline Literatur}{25}{section*.63}%
+\contentsline {section}{\numberline {A}MATLAB-Quellcode}{26}{appendix.A}%
+\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 
